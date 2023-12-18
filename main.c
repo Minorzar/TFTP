@@ -1,10 +1,15 @@
 #include "display.h"
+#include "client.h"
+#include "gettftp.h"
 
 
 int main(int argc, char* argv[]){
 	struct addrinfo hints ;
     struct addrinfo* serverInfo ;
     int outputCode ;
+    char userInput[MAX_INPUT_SIZE];
+	ssize_t byteRead;
+	char* inputBuffer[MAX_INPUT_SIZE] ;
 
 	if(argc != MAX_PARAM_NUMBER){		// Check for correct usage
 		usage() ;
@@ -46,6 +51,85 @@ int main(int argc, char* argv[]){
     }
 
     printf(CONNECTION_OK);
+
+    printPrompt() ;
+
+
+    while (1) {
+
+    	byteRead = read(STDIN_FILENO, userInput, sizeof(userInput));
+
+        // Reading error
+    	if (byteRead < 0) {
+
+       	 writeTo(STDERR_FILENO, READ_ERROR);
+        
+        }
+
+        // Ctrl + d case
+        if (byteRead == 0) {
+
+            return EXIT_SUCCESS;
+        
+        }
+
+		// No input (just enter)
+        if (byteRead == 1) {
+
+       		printPrompt();
+        
+   		}
+
+		else {
+            
+            if (byteRead) {
+
+            	// Get rid of \n
+    			userInput[byteRead - 1] = '\0';
+
+            }
+
+            // Exit case
+            if (strcmp(userInput, EXIT) == 0) {
+
+                return EXIT_SUCCESS;
+            
+            }
+
+            getInput(userInput, inputBuffer) ;
+
+            if(inputBuffer == NULL){
+
+            	writeTo(STDERR_FILENO, TOO_MANY_PARAMETERS) ;
+            	return EXIT_FAILURE ;
+
+            }
+
+
+            char function[MAX_INPUT_SIZE] ;
+            char filename[MAX_INPUT_SIZE] ;
+
+            strcpy(function, inputBuffer[0]) ;
+            strcpy(filename, inputBuffer[1]) ;
+
+            FILE* file = fopen(filename, "w");
+    		if (file == NULL){
+        	
+        		perror(FILE_ERROR);
+        		exit(EXIT_FAILURE);
+    		
+    		}
+
+    		if(strcmp(GETTFTP, function) == 0){
+
+    			receiveDataPacket(clientSocket, file);
+    			printPrompt() ;
+
+    		}
+
+    	}
+
+    }
 
 
     close(clientSocket);

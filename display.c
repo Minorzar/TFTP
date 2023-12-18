@@ -117,3 +117,10 @@ void printAddrInfo(struct addrinfo* ai){
     }
 
 }
+
+
+void printPrompt(){
+
+	writeTo(STDOUT_FILENO, PROMPT) ;
+
+}
